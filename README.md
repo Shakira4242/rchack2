@@ -1,1 +1,0 @@
-# uc-merced-hack
