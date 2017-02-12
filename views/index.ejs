@@ -6,92 +6,60 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
     <link rel='stylesheet' href='/stylesheets/style.css'/>
     <script>
-	    $(document).ready(function() {
-				var socket = io();
-        // img's
-        var imgNum = 180;
-        var something = true;
-        // Grab elements, create settings, etc.
-        var canvas = document.getElementById('canvas');
-        var context = canvas.getContext('2d');
-        var video = document.getElementById('video');
+	    $(document).ready(function() { 
+            var socket = io();
+            // img's
+            var imgNum = 0;
+            var boolean = false;
+            // Grab elements, create settings, etc.
+            var canvas = document.getElementById('canvas');
+            var context = canvas.getContext('2d');
+            var video = document.getElementById('video');
 
-        // // Trigger photo take
-        // document.getElementById("snap").addEventListener("click", function() {
-        //   context.drawImage(video, 0, 0, 640, 480);
-        // });
+            // // Trigger photo take
+            // document.getElementById("snap").addEventListener("click", function() {
+            //   context.drawImage(video, 0, 0, 640, 480);
+            // });
 
+            // take photo every 2 seconds
+            function click(){
+              context.drawImage(video, 0, 0, 455, 256);
+            }
 
-        // take photo every 2 seconds
-        function click(){
-          context.drawImage(video, 0, 0, 455, 256);
-        }
+            // Get access to the camera!
+            if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                // Not adding `{ audio: true }` since we only want video now
+                navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+                    video.src = window.URL.createObjectURL(stream);
+                    video.play();
+                });
+            }
 
-        // Get access to the camera!
-        if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            // Not adding `{ audio: true }` since we only want video now
-            navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
-                video.src = window.URL.createObjectURL(stream);
-                video.play();
+            setInterval(function () {
+              console.log(boolean);
+              if boolean {
+                var data = canvas.toDataURL("image/jpg").replace(/^data:image\/\w+;base64,/, '');
+                socket.emit('data', {"str": $("#steeringVal").val(),"num": imgNum, "img": data});
+                boolean == false;
+              }
+            }, 25);
+
+            $("#rec").click(function(){
+              if boolean {
+                boolean = false;
+              }
+              boolean = true;
             });
-        }
-
-        /* Legacy code below: getUserMedia 
-        else if(navigator.getUserMedia) { // Standard
-            navigator.getUserMedia({ video: true }, function(stream) {
-                video.src = stream;
-                video.play();
-            }, errBack);
-        } else if(navigator.webkitGetUserMedia) { // WebKit-prefixed
-            navigator.webkitGetUserMedia({ video: true }, function(stream){
-                video.src = window.webkitURL.createObjectURL(stream);
-                video.play();
-            }, errBack);
-        } else if(navigator.mozGetUserMedia) { // Mozilla-prefixed
-            navigator.mozGetUserMedia({ video: true }, function(stream){
-                video.src = window.URL.createObjectURL(stream);
-                video.play();
-            }, errBack);
-        }
-        */
-
-        // emit on steering change
-	      $('#steeringVal').on('input',function(e){
-	        socket.emit('steeringAngle', $("#steeringVal").val());
-          console.log($("#steeringVal").val());
-	      });
-
-        function log() {
-          socket.emit('log', {"str": $("#steeringVal").val(),"img": imgNum});
-        };
-
-        function saveImage() {
-          var data = canvas.toDataURL("image/jpg").replace(/^data:image\/\w+;base64,/, '');
-          socket.emit('img', {"img": data, "num": imgNum})
-        };
-
-        $("#rec").click(function(){
-          if(something){
-            setInterval(function(){
-              click();
-              log(); 
-              saveImage();
-              imgNum++;
-            }, 500);
-            something = false;
-          } else{
-            something = true;
-          }
-        });
 
 	    });  
   	</script>
   </head>
   <body>
     <button id="rec">START RECORDING</button>
-    <input type="range" id="steeringVal" value="90" min="0" max="180">
+    <input type="range" id="steeringVal" value="90.0" min="0.0" max="180.0">
     <video id="video" width="455" height="256" autoplay></video>
     <button id="snap">Snap Photo</button>
     <canvas id="canvas" width="455" height="256"></canvas>
+    <button id="predict">PREDICT ANGLE</button>
   </body>
 </html>

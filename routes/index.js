@@ -2,6 +2,7 @@ module.exports = function(io) {
     var app = require('express');
     var router = app.Router();
     var fs = require('fs');
+    var PythonShell = require('python-shell');
 
     router.get('/', function(req, res, next) {
       // while(true){
@@ -60,19 +61,26 @@ module.exports = function(io) {
         }); 
 
 
-        socket.on('log', function(data){
-          fs.appendFile('driving_dataset/data.txt', data["img"] + ".jpg" + " " + data["str"] + "\n", function(err){
-            if (err) {
+        // socket.on('log', function(data){
+        //   fs.appendFile('driving_dataset/data.txt', data["img"] + ".jpg" + " " + data["str"] + "\n", function(err){
+        //     if (err) {
 
-            }else { 
-              console.log('File saved.');
-            }
-          });
-        });
+        //     }else { 
+        //       console.log('File saved.');
+        //     }
+        //   });
+        // });
 
         socket.on('img', function(data){
           fs.writeFile("driving_dataset/" + data["num"] + ".jpg", data["img"], 'base64', function(err){
             // console.log(err);
+          });
+        });
+
+        socket.on('predict', function(data){
+          PythonShell.run('predict.py', function (err, results) {
+            if (err) throw err;
+            console.log(results);
           });
         });
     });
